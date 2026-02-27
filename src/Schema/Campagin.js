@@ -6,12 +6,9 @@ const CampaignSchema = new mongoose.Schema({
   targetAmount: { type: Number, required: true },
   raisedAmount: { type: Number, default: 0 },
   donorCount: { type: Number, default: 0 },
-  category: { 
-    type: String, 
-    enum: ['Education', 'Medical', 'Disaster', 'Environment'],
-    index: true 
-  },
+  category: { type: String,  enum: ['Education', 'Medical', 'Disaster', 'Environment'],index: true },
   deadline: { type: Date },
+  location :{ type: String , required: true , trim:true },
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 

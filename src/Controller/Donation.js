@@ -5,7 +5,7 @@ const crypto = require("crypto");
 const razorpay = require('../Payments/razorpay').razorpay
 require('dotenv').config()
 
-exports.createDonation = async (req, res) => {
+exports.createDonation = async (req, res, next) => {
   try {
     const { donorId, campaignId, amount } = req.body;
 
@@ -30,7 +30,6 @@ exports.createDonation = async (req, res) => {
     const order = await razorpay.orders.create(options); // returns id, amount, etc.
 
     return res.status(200).json({
-      status: true,
       message: "Order created successfully",
       orderId: order.id,
       amount: order.amount,
@@ -41,14 +40,14 @@ exports.createDonation = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      status: false,
+      
       message: error.message || "Internal server error",
     });
   }
 };
 
 
-exports.verifyPayment = async (req, res) => {
+exports.verifyPayment = async (req, res ,next) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body
     const body = razorpay_order_id + '|' + razorpay_payment_id
