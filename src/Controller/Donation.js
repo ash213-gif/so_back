@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken')
 const DonationSchema = require('../Schema/Donation')
 const CampaignSchema = require('../Schema/Campagin')
+const userSchema = require('../Schema/User')
 const crypto = require("crypto"); 
 const razorpay = require('../Payments/razorpay').razorpay
 require('dotenv').config()
@@ -15,6 +16,11 @@ exports.createDonation = async (req, res, next) => {
         message: "Please provide donorId, campaignId and amount",
       });
     }
+    await userSchema.findByIdAndUpdate(
+      donorId,
+      { $inc: { amount: amount } }, // total badhao
+      { new: true }
+    );
 
     // Prepare Razorpay order options
     const options = {
@@ -46,27 +52,66 @@ exports.createDonation = async (req, res, next) => {
   }
 };
 
-
-exports.verifyPayment = async (req, res ,next) => {
+exports.verifyPayment = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body
-    const body = razorpay_order_id + '|' + razorpay_payment_id
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({
+        status: false,
+        message: "Missing payment details",
+      });
+    }
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
 
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(body.toString())
-      .digest('hex')
+      .digest("hex");
 
-    if (expectedSignature === razorpay_signature) {
-      // mark order as paid in DB
-      return res.status(200).json({ status: true,message: 'Payment verified successfully' })
-    } else {
-      return res.status(400).json({ status: false,message: 'Invalid signature' })
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({
+        status: false,
+        message: "Invalid signature",
+      });
     }
+
+    // ✅ Fetch Order from Razorpay to get notes
+    const order = await razorpay.orders.fetch(razorpay_order_id);
+
+    const { donorId, campaignId } = order.notes;
+    const amount = order.amount / 100;
+
+    // ✅ Save Donation in DB
+    await DonationSchema.create({
+      donorId,
+      campaignId,
+      amount,
+       transactionId: razorpay_payment_id, 
+      orderId: razorpay_order_id,
+    });
+
+    // ✅ Update Campaign Raised Amount
+    await CampaignSchema.findByIdAndUpdate(
+      campaignId,
+      { $inc: { raisedAmount: amount } },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      status: true,
+      message: "Payment verified & donation saved successfully",
+    });
   } catch (error) {
-    console.log(error)
-    return res
-      .status(500)
-      .json({ message: 'Error verifying payment', error: error.message })
+    console.error(error);
+    return res.status(500).json({
+      status: false,
+      message: "Payment verification failed",
+    });
   }
-}
+};

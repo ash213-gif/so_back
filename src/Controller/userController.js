@@ -1,16 +1,58 @@
 const User = require('../Schema/User');
 const mongoose = require('mongoose');
+const DonationSchema   = require('../Schema/Donation');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { sendEmail} =require('../Mail/Mail')
+const {redisClient}= require('../Redis/Redis')
 
 
 
 exports.getUsers = async (req, res) => {
   try {
     const users = await User.find();
-    res.json(users);
+    const count = await User.countDocuments();
+    res.json({ users, count });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// GET /api/users/:userId/transactions/summary
+exports.Transactionsummary = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cacheKey = `user:${id}:transactions`;
+
+    const cachedData = await redisClient.get(cacheKey);
+    if (cachedData) {
+      return res.status(200).json(JSON.parse(cachedData));
+    }
+    
+    const txs = await DonationSchema.find({ donorId: id }).sort({ createdAt: -1 });
+    const totalTimes = txs.length;
+    const totalAmount = txs.reduce((sum, t) => sum + t.amount, 0);
+    
+    const result = { totalTimes, totalAmount, history: txs };
+    await redisClient.setEx(cacheKey, 60, JSON.stringify(result));
+
+    res.json(result);
+
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: 'Failed to get summary' });
+  }
+}
+
+
+exports.updatedUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { username, email } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const updatedUser = await User.findByIdAndUpdate(id, { username, email,  }, { new: true });
+    res.json({ message: 'User updated successfully', result: updatedUser });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

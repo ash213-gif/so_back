@@ -28,10 +28,10 @@ const DonationSchema = new mongoose.Schema({
     enum: ['pending', 'completed', 'failed'],
     default: 'pending'
   },
-  transactionId: { 
-    type: String, 
-    unique: true // Prevents duplicate donation entries
-  },
+  transactionId: {
+  type: String,
+  unique: true,
+},
   isAnonymous: {
     type: Boolean,
     default: false
