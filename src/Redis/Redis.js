@@ -9,17 +9,12 @@ redisClient.on('error', (err) => {
   console.error('Redis Error:', err)
 })
 
-async function connectRedis() {
+const connectRedis = async () => {
    if (!redisClient.isOpen) {
     await redisClient.connect();
     console.log("✅ Redis connected");
-  } else {
-    console.log("⚠️ Redis already connected");
-  }
-  await redisClient.connect()
+  } 
   console.log('✅ Redis Cloud Connected')
 }
-
-connectRedis()
 
 module.exports = {redisClient ,connectRedis }

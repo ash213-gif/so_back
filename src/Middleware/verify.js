@@ -8,7 +8,7 @@ exports.auth= async (req, res, next)=> {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded =await jwt.verify(token, process.env.token);
+    const decoded =await jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded; // { userId, email, iat, exp }
     next();
   } catch (err) {

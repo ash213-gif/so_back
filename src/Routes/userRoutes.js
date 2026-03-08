@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { auth} = require('../Middleware/verify');
-const {getUsers, signup, login, Transactionsummary,updatedUser ,verifyOtp } = require('../Controller/userController');
+const {getUsers, signup, resendOtp ,DeleteAccount,DeactivateAccount ,  login, Transactionsummary,updatedUser ,verifyOtp } = require('../Controller/userController');
 const {createDonation, verifyPayment} = require('../Controller/Donation');
-const {createCampaign, getCampaigns} =require('../Controller/Campagin')
+const {createCampaign, Adminsummary,getCampaigns , analytics} =require('../Controller/Campagin')
 
 
 //  USERS ROUTES  
@@ -15,11 +15,15 @@ router.post('/login', login);
 router.post('/:id/verifyotp', verifyOtp);
 
 router.put('/updatedUser/:id', updatedUser);
-
+router.put('/deactivate/:id', DeactivateAccount);
+router.put('/resendotp/:id',resendOtp); 
+router.delete('/delete/:id', DeleteAccount);
 
 // Campaigns Routes  
 router.post('/createCampaign',createCampaign);
+router.get('/adminsummary', Adminsummary);
 router.get('/getCampaigns', getCampaigns);
+router.get('/analytics', analytics);
 
 
 // Donations Routes  AND PAYMENT

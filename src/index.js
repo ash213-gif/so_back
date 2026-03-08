@@ -6,15 +6,13 @@ const mongoose = require('mongoose');
 const { connectRedis } = require('./Redis/Redis');
 const { Server } = require('socket.io');
 const http = require('http'); // ⬅️ add this
-const socketHandler = require("./Redis/Socket");
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const app = express();
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-
+const { initSocket } = require('./Redis/Socket');
 const Port = 3030;
 
 // DB
@@ -27,6 +25,7 @@ mongoose.connect(process.env.MongoUrl)
 
 // Routes
 app.use('/', routes);
+initSocket(server);
 
 // Listen with HTTP server (NOT app.listen)
 server.listen(Port, async () => {
