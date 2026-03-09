@@ -171,7 +171,7 @@ exports.signup = async (req, res) => {
       isverify: false,
       isBlocked: false,
     });
-    await sendEmail(email, otp, username);
+    await sendEmail(email, otp, username)
     const newUser = await user.save();
     res.status(201).json({ result: newUser, message: 'Signup successful. OTP sent to your email.' });
   } catch (err) {
@@ -249,39 +249,63 @@ exports.verifyOtp = async (req, res) => {
 };
 
 //resend otp
+
 exports.resendOtp = async (req, res) => {
   try {
     const { id } = req.params;
+console.log(id)
+    // 1️⃣ Validate ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID",
+      });
+    }
 
-    // 1) Find user to get email & username
+    // 2️⃣ Find user
     const user = await User.findById(id);
+
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
     const email = user.email;
-    const username = user.username || user.name || 'User';
+    console.log(email)
+    const username = user.username || user.name || "User";
 
-    // 2) Generate OTP
+    // 3️⃣ Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // 3) Send email
-    await sendEmail(email, otp, username);
+    // 4️⃣ Send Email
+    const emailSent = await sendEmail(email, otp, username);
 
-    // 4) Save OTP in DB
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { Otp: otp },          // or { otp: otp } based on your schema field name
-      { new: true }
-    );
+    if (!emailSent) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send OTP email",
+      });
+    }
 
-    // 5) Respond
+    // 5️⃣ Save OTP in DB
+    user.Otp = otp;
+    await user.save();
+
+    // 6️⃣ Response
     return res.status(200).json({
-      message: 'OTP resent successfully',
-      userId: updatedUser._id,
+      success: true,
+      message: "OTP resent successfully",
+      userId: user._id,
     });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Failed to resend OTP' });
+
+  } catch (error) {
+    console.error("Resend OTP Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error while resending OTP",
+    });
   }
 };
