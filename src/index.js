@@ -23,7 +23,6 @@ mongoose.connect(process.env.MongoUrl)
   const server = http.createServer(app);
 
 // Routes
-app.use('/', routes);
 
 
 app.use(cors({
@@ -37,8 +36,9 @@ app.use(cors({
 }));
 // app.options(/.*/, cors());
 
-initSocket(server);
+app.use('/', routes);
 
+initSocket(server);
 // Listen with HTTP server (NOT app.listen)
 server.listen(Port, async () => {
   await connectRedis();
