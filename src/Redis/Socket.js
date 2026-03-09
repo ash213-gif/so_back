@@ -1,4 +1,5 @@
 const { Server } = require("socket.io");
+require('dotenv').config();
 
 let io;
 
@@ -6,7 +7,7 @@ const initSocket = (server) => {
   io = new Server(server, {
     cors: {
       origin: [
-        "https://so-front-ashy.vercel.app",
+        process.env.FRONTEND_URL ||
         "http://localhost:5173",
       ],
       methods: ["GET", "POST" ,"PUT","DELETE"],
