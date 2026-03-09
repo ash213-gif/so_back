@@ -11,7 +11,6 @@ const cors = require('cors');
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
 const { initSocket } = require('./Redis/Socket');
 const Port = 3030;
 
@@ -25,12 +24,10 @@ mongoose.connect(process.env.MongoUrl)
 
 // Routes
 app.use('/', routes);
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "https://myapp.vercel.app");
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  next();
-});
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  credentials: true
+}));
 
 initSocket(server);
 
