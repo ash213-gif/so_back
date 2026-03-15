@@ -171,7 +171,7 @@ exports.signup = async (req, res) => {
       isverify: false,
       isBlocked: false,
     });
-    await sendEmail(email, otp, username)
+     sendEmail(email, otp, username)
     const newUser = await user.save();
     res.status(201).json({ result: newUser, message: 'Signup successful. OTP sent to your email.' });
   } catch (err) {
