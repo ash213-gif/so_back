@@ -19,7 +19,7 @@ router.put('/deactivate/:id', DeactivateAccount);
 router.put('/resendotp/:id',resendOtp); 
 router.delete('/delete/:id', DeleteAccount);
 
-// Campaigns Routes  
+// Campaigns Routes  ADmin
 router.post('/createCampaign',createCampaign);
 router.get('/adminsummary', Adminsummary);
 router.get('/getCampaigns', getCampaigns);

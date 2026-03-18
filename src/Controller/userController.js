@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { sendEmail} =require('../Mail/Mail')
 const {redisClient}= require('../Redis/Redis')
-const { getIO } = require("../Redis/Socket");
+const { getIO ,initSocket} = require("../Redis/Socket");
 
 
 
@@ -23,7 +23,7 @@ exports.getUsers = async (req, res) => {
 // GET /api/users/:userId/transactions/summary
 exports.Transactionsummary = async (req, res) => {
   try {
-    const io = getIO();
+    // const io = initSocket();
     const { id } = req.params;
     const cacheKey = `user:${id}:transactions`;
 
@@ -39,10 +39,10 @@ exports.Transactionsummary = async (req, res) => {
 
     
     const result = { totalTimes, totalAmount, history: txs };
-    io.emit("transaction:summary", result)
+    // io.emit("transaction:summary", result)
     await redisClient.setEx(cacheKey, 60, JSON.stringify(result));
 
-    res.json(result);
+      return res.status(200).json(result);
 
   } catch (err) {
     console.log(err)
@@ -75,8 +75,8 @@ exports.updatedUser = async (req, res) => {
       new: true,
     });
 
-    const io = getIO();
-    io.emit("user:updated", updatedUser);
+    // const io = getIO();
+    // io.emit("user:updated", updatedUser);
 
     res.json({ message: "User updated successfully", result: updatedUser });
   } catch (err) {
