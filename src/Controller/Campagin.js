@@ -2,8 +2,7 @@ const Campaign = require('../Schema/Campagin')
 const User =require('../Schema/User')
 const Donation = require('../Schema/Donation')
 const { redisClient } = require('../Redis/Redis')
-const { getIO  }= require('../Redis/Socket')
-
+const { getIO } = require('../Redis/Socket'); 
 
 // 1. CREATE A CAMPAIGN (Admin only logic)
 exports.createCampaign = async (req, res) => {
@@ -239,5 +238,37 @@ exports.analytics = async (req, res) => {
   } catch (err) {
     console.error('Analytics error:', err);
     return res.status(500).json({ message: 'Failed to load analytics' });
+  }
+};
+
+exports.recentactivity = async (req, res) => {
+  try {
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const limit = parseInt(req.query.limit) || 10;  // Client-controlled, default 10
+
+    const [newuserjoined, recentUsers, recentDonations, recentcampaign] = await Promise.all([
+      User.countDocuments({ createdAt: { $gt: yesterday } }),
+      User.find({ createdAt: { $gt: yesterday } })
+        .select('name email createdAt')  // Only needed fields
+        .sort({ createdAt: -1 })
+        .limit(limit),
+      Donation.find({ createdAt: { $gt: yesterday } })
+        .populate('donorId')  // Join user name
+        .select('userId amount createdAt')
+        .sort({ createdAt: -1 })
+        .limit(limit),
+      Campaign.countDocuments({ createdAt: { $gt: yesterday } })
+    ]);
+
+    res.json({ 
+      newuserjoined, 
+      recentUsers, 
+      recentDonations, 
+      recentcampaign 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 };
